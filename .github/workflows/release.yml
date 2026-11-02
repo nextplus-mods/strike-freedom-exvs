@@ -1,0 +1,32 @@
+name: release
+# Makes a GitHub release (made by github-actions) every time the cheat files change,
+# so the number of downloads can be counted. Japanese and English are separate releases
+# because both files have to be downloaded as NPJH50107.ini.
+on:
+  push:
+    branches: [main]
+    paths: ['NPJH50107.ini', 'en/NPJH50107.ini']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: release
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      JA_FILE: NPJH50107.ini
+      EN_FILE: en/NPJH50107.ini
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the Japanese and English releases
+        run: |
+          set -euo pipefail
+          stamp=$(date -u +%Y%m%d-%H%M%S)
+          mkdir -p out/ja out/en
+          cp "$JA_FILE" out/ja/NPJH50107.ini
+          cp "$EN_FILE" out/en/NPJH50107.ini
+          gh release create "v$stamp" out/ja/NPJH50107.ini --target "$GITHUB_SHA" \
+            --title "NPJH50107.ini (Japanese) $stamp" --notes "Cheat file with Japanese cheat names." --latest
+          gh release create "v$stamp-en" out/en/NPJH50107.ini --target "$GITHUB_SHA" \
+            --title "NPJH50107.ini (English) $stamp" --notes "Cheat file with English cheat names." --latest=false
